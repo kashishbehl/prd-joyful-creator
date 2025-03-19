@@ -126,15 +126,14 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
       setIsEditing(null);
     } else {
       // Add user's answer to messages
-      setMessages(prev => [
-        ...prev,
-        {
-          id: `a-${currentQuestion.id}`,
-          isUser: true,
-          text: currentInput,
-          questionId: currentQuestion.id
-        }
-      ]);
+      const userAnswer = {
+        id: `a-${currentQuestion.id}`,
+        isUser: true,
+        text: currentInput,
+        questionId: currentQuestion.id
+      };
+      
+      setMessages(prev => [...prev, userAnswer]);
       
       // Update the answer in context
       try {
