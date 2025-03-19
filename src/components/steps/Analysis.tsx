@@ -15,28 +15,14 @@ const Analysis = ({ onNext }: AnalysisProps) => {
   const [chatReady, setChatReady] = useState(false);
   
   useEffect(() => {
-    const performAnalysis = async () => {
-      // Only perform analysis if we have a document and persona
-      if (state.uploadedDocument && state.selectedPersona) {
-        try {
-          setAnalyzing(true);
-          const result = await mockApi.analyzeDocument(
-            state.uploadedDocument,
-            state.selectedPersona
-          );
-          // In a real app, we would store the questions in context
-          // For now, they're already set in the mock API
-          setAnalyzing(false);
-          setChatReady(true);
-        } catch (error) {
-          console.error('Analysis error:', error);
-          setAnalyzing(false);
-        }
-      }
-    };
+    // Simulate document analysis with a brief delay for the prototype
+    const analysisTimer = setTimeout(() => {
+      setAnalyzing(false);
+      setChatReady(true);
+    }, 3000);
     
-    performAnalysis();
-  }, [state.uploadedDocument, state.selectedPersona]);
+    return () => clearTimeout(analysisTimer);
+  }, []);
   
   const handleChatComplete = () => {
     // Wait a bit to let the user read the final message

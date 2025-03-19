@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { SendIcon, EditIcon } from 'lucide-react';
 import { usePRD } from '../context/PRDContext';
 import { mockApi } from '../utils/mockApi';
+import { Textarea } from './ui/textarea';
 
 interface ChatInterfaceProps {
   onComplete: () => void;
@@ -24,6 +25,7 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
   const [isEditing, setIsEditing] = useState<string | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   
   // Initialize with a welcome message
   useEffect(() => {
@@ -48,6 +50,21 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
             questionId: firstQuestion.id
           }
         ]);
+      } else {
+        // If no questions are set in the context, add mock questions for the prototype
+        const mockQuestion = {
+          id: 'mock-1',
+          text: 'What problem does your product solve?'
+        };
+        setMessages(prev => [
+          ...prev,
+          {
+            id: `q-${mockQuestion.id}`,
+            isUser: false,
+            text: mockQuestion.text,
+            questionId: mockQuestion.id
+          }
+        ]);
       }
     }, 1000);
     
@@ -59,6 +76,13 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
   
+  // Focus textarea when component mounts
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
+  }, []);
+  
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setCurrentInput(e.target.value);
   };
@@ -68,7 +92,17 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
     
     setIsSubmitting(true);
     
-    const currentQuestion = state.questions[currentQuestionIndex];
+    // For prototype: If no questions in context, create mock ones
+    const mockQuestions = [
+      { id: 'mock-1', text: 'What problem does your product solve?' },
+      { id: 'mock-2', text: 'Who are your target users?' },
+      { id: 'mock-3', text: 'What are the key features needed?' },
+      { id: 'mock-4', text: 'What is your timeline for launch?' }
+    ];
+    
+    const currentQuestion = state.questions.length > 0 
+      ? state.questions[currentQuestionIndex] 
+      : mockQuestions[currentQuestionIndex];
     
     if (isEditing) {
       // Update an existing answer
@@ -81,8 +115,12 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
       // Update the answer in context
       const questionId = messages.find(m => m.id === isEditing)?.questionId;
       if (questionId) {
-        await mockApi.submitAnswer(questionId, currentInput);
-        updateQuestionAnswer(questionId, currentInput);
+        try {
+          await mockApi.submitAnswer(questionId, currentInput);
+          updateQuestionAnswer(questionId, currentInput);
+        } catch (error) {
+          console.log('Mock API call for editing answer');
+        }
       }
       
       setIsEditing(null);
@@ -99,16 +137,26 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
       ]);
       
       // Update the answer in context
-      await mockApi.submitAnswer(currentQuestion.id, currentInput);
-      updateQuestionAnswer(currentQuestion.id, currentInput);
+      try {
+        await mockApi.submitAnswer(currentQuestion.id, currentInput);
+        updateQuestionAnswer(currentQuestion.id, currentInput);
+      } catch (error) {
+        console.log('Mock API call for submitting answer');
+      }
       
       // Move to next question
       const nextIndex = currentQuestionIndex + 1;
+      const totalQuestions = state.questions.length > 0 
+        ? state.questions.length 
+        : mockQuestions.length;
       
-      if (nextIndex < state.questions.length) {
+      if (nextIndex < totalQuestions) {
         // Add a small delay before showing the next question
         setTimeout(() => {
-          const nextQuestion = state.questions[nextIndex];
+          const nextQuestion = state.questions.length > 0
+            ? state.questions[nextIndex]
+            : mockQuestions[nextIndex];
+            
           setMessages(prev => [
             ...prev,
             {
@@ -142,6 +190,11 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
     
     setCurrentInput('');
     setIsSubmitting(false);
+    
+    // Refocus the textarea after submission
+    if (textareaRef.current) {
+      textareaRef.current.focus();
+    }
   };
   
   const handleKeyPress = (e: React.KeyboardEvent) => {
@@ -156,6 +209,13 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
     if (message && message.isUser) {
       setIsEditing(messageId);
       setCurrentInput(message.text);
+      
+      // Focus the textarea after setting up edit mode
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+        }
+      }, 0);
     }
   };
   
@@ -163,8 +223,8 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
     <div className="h-full flex flex-col">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-medium">Questions & Clarifications</h3>
-        <div className="badge badge-blue">
-          {currentQuestionIndex + 1} of {state.questions.length} Questions
+        <div className="bg-primary/10 text-primary px-3 py-1 rounded-full text-sm font-medium">
+          {currentQuestionIndex + 1} of {state.questions.length || 4} Questions
         </div>
       </div>
       
@@ -178,7 +238,7 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
               className={`max-w-[80%] p-3 rounded-lg ${
                 message.isUser
                   ? 'bg-primary text-primary-foreground ml-8'
-                  : 'glass-card mr-8'
+                  : 'bg-secondary/50 mr-8'
               }`}
             >
               <div className="flex items-start">
@@ -187,6 +247,7 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
                   <button
                     onClick={() => handleEdit(message.id)}
                     className="ml-2 p-1 opacity-70 hover:opacity-100 transition-opacity"
+                    aria-label="Edit response"
                   >
                     <EditIcon className="h-3 w-3" />
                   </button>
@@ -199,18 +260,20 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
       </div>
       
       <div className="relative">
-        <textarea
+        <Textarea
+          ref={textareaRef}
           value={currentInput}
           onChange={handleInputChange}
           onKeyDown={handleKeyPress}
           placeholder="Type your answer here..."
-          className="input-field w-full min-h-[100px] pr-12 resize-none"
-          disabled={currentQuestionIndex >= state.questions.length || isSubmitting}
+          className="min-h-[100px] pr-12 resize-none"
+          disabled={currentQuestionIndex >= (state.questions.length || 4) || isSubmitting}
         />
         <button
           onClick={handleSubmit}
-          disabled={currentQuestionIndex >= state.questions.length || !currentInput.trim() || isSubmitting}
-          className="absolute right-3 bottom-3 p-2 rounded-full bg-primary/90 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+          disabled={!currentInput.trim() || isSubmitting}
+          className="absolute right-3 bottom-3 p-2 rounded-full bg-primary/90 hover:bg-primary text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          aria-label="Send message"
         >
           <SendIcon className="h-5 w-5" />
         </button>
