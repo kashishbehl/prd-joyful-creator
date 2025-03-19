@@ -1,4 +1,3 @@
-
 import { Question, Persona } from '../context/PRDContext';
 
 // Simulated delay function
@@ -33,6 +32,9 @@ const getQuestionsByPersona = (persona: Persona): Question[] => {
   return [...commonQuestions, ...personaSpecificQuestions[persona]];
 };
 
+// Store for the current progress to ensure it always increases
+let currentProgress = 0;
+
 // Mock API functions
 export const mockApi = {
   // Step 1: Upload document
@@ -63,6 +65,8 @@ export const mockApi = {
 
   // Step 3: Generate PRD
   generatePRD: async (projectName: string, answers: Record<string, string>) => {
+    // Reset progress when starting a new generation
+    currentProgress = 0;
     // This would trigger a long-running process
     return { success: true, jobId: 'prd-gen-123' };
   },
@@ -70,20 +74,25 @@ export const mockApi = {
   // Step 3: Check generation status
   checkGenerationStatus: async (jobId: string) => {
     await delay(1000);
-    // Randomly progress between 5-15% each check
-    const progressIncrement = Math.floor(Math.random() * 10) + 5;
+    
+    // Progressively increase by 5-10% each check
+    const progressIncrement = Math.floor(Math.random() * 5) + 5;
+    currentProgress += progressIncrement;
+    
+    // Cap at 100%
+    if (currentProgress > 100) currentProgress = 100;
     
     // Return different stages based on progress
     let stage = 'Drafting Initial PRD';
-    if (progressIncrement > 30) stage = 'Organizing Content';
-    if (progressIncrement > 60) stage = 'Refining Language';
-    if (progressIncrement > 90) stage = 'Finalizing Document';
+    if (currentProgress > 30) stage = 'Organizing Content';
+    if (currentProgress > 60) stage = 'Refining Language';
+    if (currentProgress > 90) stage = 'Finalizing Document';
     
     return { 
       success: true, 
-      progress: progressIncrement, 
+      progress: currentProgress, 
       stage,
-      isComplete: progressIncrement >= 100
+      isComplete: currentProgress >= 100
     };
   },
 

@@ -52,17 +52,20 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
         ]);
       } else {
         // If no questions are set in the context, add mock questions for the prototype
-        const mockQuestion = {
-          id: 'mock-1',
-          text: 'What problem does your product solve?'
-        };
+        const mockQuestions = [
+          { id: 'mock-1', text: 'What problem does your product solve?' },
+          { id: 'mock-2', text: 'Who are your target users?' },
+          { id: 'mock-3', text: 'What are the key features needed?' },
+          { id: 'mock-4', text: 'What is your timeline for launch?' }
+        ];
+        
         setMessages(prev => [
           ...prev,
           {
-            id: `q-${mockQuestion.id}`,
+            id: `q-${mockQuestions[0].id}`,
             isUser: false,
-            text: mockQuestion.text,
-            questionId: mockQuestion.id
+            text: mockQuestions[0].text,
+            questionId: mockQuestions[0].id
           }
         ]);
       }
@@ -285,3 +288,4 @@ const ChatInterface = ({ onComplete }: ChatInterfaceProps) => {
 };
 
 export default ChatInterface;
+
