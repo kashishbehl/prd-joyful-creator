@@ -76,7 +76,7 @@ const FileUpload = ({ onUploadComplete }: FileUploadProps) => {
         title: "File uploaded",
         description: "Your document has been uploaded successfully."
       });
-      onUploadComplete();
+      onUploadComplete(file);
     } catch (error) {
       console.error('Upload error:', error);
       toast({

@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
 import { FileTextIcon, DownloadIcon } from 'lucide-react';
 import { usePRD } from '../../context/PRDContext';
 import FileUpload from '../FileUpload';
 import { mockApi } from '../../utils/mockApi';
 import { useToast } from '../../hooks/use-toast';
+import { fetchWrapper } from '../../utils/fetchWrapper';
 
 interface WelcomeProps {
   onNext: () => void;
@@ -14,7 +14,8 @@ const Welcome = ({ onNext }: WelcomeProps) => {
   const { state, setProjectName, setSelectedPersona } = usePRD();
   const { toast } = useToast();
   const [isDownloading, setIsDownloading] = useState(false);
-  
+  const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+
   const handleDownloadTemplate = async () => {
     setIsDownloading(true);
     try {
@@ -33,12 +34,34 @@ const Welcome = ({ onNext }: WelcomeProps) => {
       setIsDownloading(false);
     }
   };
-  
-  const canProceed = 
-    state.projectName.trim() !== '' && 
-    state.selectedPersona !== null && 
+
+  const canProceed =
+    state.projectName.trim() !== '' &&
+    state.selectedPersona !== null &&
     state.uploadedDocument !== null;
-  
+
+  const handleFileUpload = async (file) => {
+    if (!file) {
+      console.error('No file provided for upload.');
+      return;
+    }
+
+    console.log('File to upload:', file); // Log the file details for debugging
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file); // Append the file to FormData
+
+      const res = await fetchWrapper('/analyze-file', {
+        method: 'POST',
+        body: formData, // Use FormData to send the file
+      });
+      console.log('File upload response:', res);
+    } catch (error) {
+      console.error('Error during file upload:', error);
+    }
+  };
+
   return (
     <div className="step-card animate-scale-in">
       <div className="mb-6 text-center">
@@ -47,7 +70,7 @@ const Welcome = ({ onNext }: WelcomeProps) => {
           Create comprehensive product requirement documents with AI assistance
         </p>
       </div>
-      
+
       <div className="space-y-6">
         <div>
           <label className="block text-sm font-medium mb-2">
@@ -61,7 +84,7 @@ const Welcome = ({ onNext }: WelcomeProps) => {
             className="input-field w-full"
           />
         </div>
-        
+
         <div>
           <label className="block text-sm font-medium mb-2">
             Select Persona
@@ -71,18 +94,17 @@ const Welcome = ({ onNext }: WelcomeProps) => {
               <button
                 key={persona}
                 onClick={() => setSelectedPersona(persona as any)}
-                className={`p-4 rounded-lg border ${
-                  state.selectedPersona === persona
+                className={`p-4 rounded-lg border ${state.selectedPersona === persona
                     ? 'border-primary bg-primary/5 text-primary'
                     : 'border-border hover:border-primary/50 hover:bg-secondary/50'
-                } transition-all duration-200`}
+                  } transition-all duration-200`}
               >
                 <span className="font-medium">{persona}</span>
               </button>
             ))}
           </div>
         </div>
-        
+
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <label className="block text-sm font-medium">
@@ -97,18 +119,22 @@ const Welcome = ({ onNext }: WelcomeProps) => {
               <span>{isDownloading ? 'Downloading...' : 'Download Template'}</span>
             </button>
           </div>
-          
-          <FileUpload onUploadComplete={() => {}} />
+
+          <FileUpload
+            onUploadComplete={(file) => {
+              console.log('File received from FileUpload:', file); // Log the file received
+              handleFileUpload(file);
+            }}
+          />
         </div>
-        
+
         <button
           onClick={onNext}
           disabled={!canProceed}
-          className={`w-full py-3 px-4 rounded-lg text-center font-medium transition-all duration-300 ${
-            canProceed
+          className={`w-full py-3 px-4 rounded-lg text-center font-medium transition-all duration-300 ${canProceed
               ? 'glass-button'
               : 'bg-muted text-muted-foreground cursor-not-allowed'
-          }`}
+            }`}
         >
           Continue to Analysis
         </button>

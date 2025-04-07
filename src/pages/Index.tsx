@@ -9,9 +9,12 @@ import Generation from '../components/steps/Generation';
 import Completion from '../components/steps/Completion';
 
 const PRDApp = () => {
-  const { state, setCurrentStep, resetState } = usePRD();
+  const { state, setCurrentStep, resetState, setSessionId } = usePRD();
   
-  const handleNext = () => {
+  const handleNext = (data) => {
+    if (data?.session_id) {
+      setSessionId(data.session_id);
+    }
     setCurrentStep(state.currentStep + 1);
   };
   

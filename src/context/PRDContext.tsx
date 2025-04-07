@@ -19,10 +19,12 @@ export interface PRDState {
   generationStage: string;
   finalDocument: string | null;
   qualityScore: number | null;
+  session_id?: string;
 }
 
 interface PRDContextType {
   state: PRDState;
+  setSessionId: (sessionId: string) => void;
   setCurrentStep: (step: number) => void;
   setProjectName: (name: string) => void;
   setSelectedPersona: (persona: Persona) => void;
@@ -55,6 +57,10 @@ export const PRDProvider = ({ children }: { children: ReactNode }) => {
   const setCurrentStep = (step: number) => {
     setState(prevState => ({ ...prevState, currentStep: step }));
   };
+
+  const setSessionId = (sessionId: string) => {
+    setState(prevState => ({ ...prevState, session_id: sessionId }));
+  }
 
   const setProjectName = (name: string) => {
     setState(prevState => ({ ...prevState, projectName: name }));
@@ -101,6 +107,7 @@ export const PRDProvider = ({ children }: { children: ReactNode }) => {
     <PRDContext.Provider
       value={{
         state,
+        setSessionId,
         setCurrentStep,
         setProjectName,
         setSelectedPersona,

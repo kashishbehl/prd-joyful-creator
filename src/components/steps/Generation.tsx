@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { usePRD } from '../../context/PRDContext';
 import ProgressIndicator from '../ProgressIndicator';
 import { mockApi } from '../../utils/mockApi';
+import { fetchWrapper } from '@/utils/fetchWrapper';
 
 interface GenerationProps {
   onNext: () => void;
@@ -31,9 +32,31 @@ const Generation = ({ onNext }: GenerationProps) => {
         console.error('Generation error:', error);
       }
     };
+
+    handleGeneratePrd();
     
-    startGeneration();
   }, []);
+ 
+  const handleGeneratePrd = async() => {
+    if (state.session_id) {
+      const res = await fetchWrapper(`/prd/export-prd/${state.session_id}?assemble=true`);
+      console.log(res);
+      if (!res.ok) {
+        throw new Error('Failed to download the file');
+      }
+      const blob = await res.blob();
+      console.log('Blob size:', blob.size);
+      console.log('Blob type:', blob.type);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'Razorpay_PRD.docx'; // Ensure the filename matches the backend
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    }
+  }
   
   // Poll for status updates
   useEffect(() => {
@@ -71,15 +94,7 @@ const Generation = ({ onNext }: GenerationProps) => {
     <div className="step-card animate-fade-in py-12">
       <div className="text-center mb-8">
         <h2 className="text-2xl font-medium mb-2">Generating Your PRD</h2>
-        <p className="text-muted-foreground">
-          Your answers are being used to create a comprehensive document
-        </p>
       </div>
-      
-      <ProgressIndicator 
-        progress={state.generationProgress} 
-        stage={state.generationStage || 'Initializing'} 
-      />
     </div>
   );
 };
